@@ -1,6 +1,6 @@
 {
     "description": "dave-session",
-    "main": "./boltah.js",
+    "main": "./voltah.js",
   "engines" : { 
     "npm" : ">=9.7.2",
     "node" : ">=20.0.0"
