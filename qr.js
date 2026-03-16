@@ -1,4 +1,5 @@
 const { makeid, SESSION_PREFIX } = require('./id');
+const { sendButtons } = require('gifted-btns');
 const QRCode = require('qrcode');
 const express = require('express');
 const fs = require('fs');
@@ -12,6 +13,9 @@ const {
 } = require('@whiskeysockets/baileys');
 
 const router = express.Router();
+
+const REPO_URL  = 'https://github.com/Davex-254/DAVE-X';
+const DEV_PHONE = '+254104260236';
 
 function removeFile(filePath) {
   try {
@@ -56,7 +60,6 @@ router.get('/', async (req, res) => {
 
             const credsPath = path.join(tempDir, 'creds.json');
 
-            // Wait until creds.json actually exists
             let retries = 10;
             while (!fs.existsSync(credsPath) && retries-- > 0) {
               await delay(1000);
@@ -72,26 +75,50 @@ router.get('/', async (req, res) => {
             const credsData = fs.readFileSync(credsPath);
             const sessionId = SESSION_PREFIX + Buffer.from(credsData).toString('base64');
 
-            const sessionMsg = await socket.sendMessage(socket.user.id, { text: sessionId });
+            await socket.sendMessage(socket.user.id, { text: sessionId });
             console.log('[QR] Session ID sent ✓');
 
-            const infoText =
-              `╔══════════════════════╗\n` +
-              `║   SESSION GENERATED   ║\n` +
-              `╠══════════════════════╣\n` +
-              `║ Bot    : DAVE-X       ║\n` +
-              `║ Type   : Base64       ║\n` +
-              `║ Status : Active ✅    ║\n` +
-              `╠══════════════════════╣\n` +
-              `║ Copy the session ID   ║\n` +
-              `║ above and set it as  ║\n` +
-              `║ SESSION_ID in your   ║\n` +
-              `║ bot config / Heroku. ║\n` +
-              `╚══════════════════════╝\n\n` +
-              `⭐ Star the repo if this helped!`;
-
-            await socket.sendMessage(socket.user.id, { text: infoText }, { quoted: sessionMsg });
-            console.log('[QR] Info message sent ✓');
+            await sendButtons(socket, socket.user.id, {
+              title: '🤖 DAVE-X Session Ready',
+              text:
+                '✅ *Your session ID has been generated!*\n\n' +
+                'Copy the message above and set it as *SESSION_ID* in your bot config.\n\n' +
+                '_Tap a button below for quick actions:_',
+              footer: 'DAVE-X Bot • Powered by GiftedTech',
+              buttons: [
+                {
+                  name: 'cta_copy',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: '📋 Copy Session ID',
+                    copy_code: sessionId,
+                  }),
+                },
+                {
+                  name: 'cta_url',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: '🌐 Visit Repo',
+                    url: REPO_URL,
+                    merchant_url: REPO_URL,
+                  }),
+                },
+                {
+                  name: 'cta_call',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: '📞 Contact Developer',
+                    phone_number: DEV_PHONE,
+                  }),
+                },
+                {
+                  name: 'cta_url',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: '📖 Documentation',
+                    url: REPO_URL + '#readme',
+                    merchant_url: REPO_URL + '#readme',
+                  }),
+                },
+              ],
+            });
+            console.log('[QR] Interactive buttons sent ✓');
 
             await delay(1000);
             await socket.ws.close();

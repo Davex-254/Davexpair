@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
 
-const SESSION_PREFIX = 'JUNE-MD:~';
+const SESSION_PREFIX = 'DAVE-X:~';
 
 function makeid() {
   return randomUUID().replace(/-/g, '').slice(0, 16);

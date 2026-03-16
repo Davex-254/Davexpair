@@ -14,6 +14,7 @@
     "awesome-phonenumber": "^7.8.0",
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
+    "gifted-btns": "^1.0.2",
     "jimp": "^1.6.0",
     "pastebin-js": "^1.0.6",
     "path": "^0.12.7",
