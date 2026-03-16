@@ -115,9 +115,6 @@ router.get('/generate', async (req, res) => {
             const selfJid = jidNormalizedUser(socket.user.id);
             console.log(`[QR] Sending session to JID: ${selfJid}`);
 
-            await socket.sendMessage(selfJid, { text: sessionId });
-            console.log('[QR] Session ID sent ✓');
-
             try {
               await sendButtons(socket, selfJid, {
                 title: '🤖 DAVE-X Session Ready',
@@ -161,7 +158,7 @@ router.get('/generate', async (req, res) => {
               });
               console.log('[QR] Interactive buttons sent ✓');
             } catch (btnErr) {
-              console.error('[QR] sendButtons error (session was already sent):', btnErr.message);
+              console.error('[QR] sendButtons error:', btnErr.message);
             }
 
             await delay(1000);
