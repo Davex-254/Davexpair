@@ -1,5 +1,4 @@
 const { makeid, SESSION_PREFIX } = require('./id');
-const { sendButtons } = require('gifted-btns');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -8,15 +7,13 @@ const {
   default: makeWASocket,
   useMultiFileAuthState,
   delay,
+  fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   Browsers,
   jidNormalizedUser,
 } = require('@whiskeysockets/baileys');
 
 const router = express.Router();
-
-const REPO_URL  = 'https://github.com/Davex-254/DAVE-X';
-const DEV_PHONE = '+254104260236';
 
 function removeFile(filePath) {
   try {
@@ -36,6 +33,7 @@ router.get('/', async (req, res) => {
 
   async function startPairSession() {
     const { state, saveCreds } = await useMultiFileAuthState(tempDir);
+    const { version } = await fetchLatestBaileysVersion();
 
     try {
       const socket = makeWASocket({
@@ -46,10 +44,10 @@ router.get('/', async (req, res) => {
             pino({ level: 'silent' }).child({ level: 'silent' })
           ),
         },
-        version: [2, 3000, 1033105955],
+        version,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: Browsers.windows('Edge'),
+        browser: Browsers.ubuntu('Chrome'),
         connectTimeoutMs: 60000,
       });
 
@@ -93,55 +91,11 @@ router.get('/', async (req, res) => {
 
             const credsData = fs.readFileSync(credsPath);
             const sessionId = SESSION_PREFIX + Buffer.from(credsData).toString('base64');
-
             const selfJid = jidNormalizedUser(socket.user.id);
-            console.log(`[Pair] Sending session to JID: ${selfJid}`);
 
-            try {
-              await sendButtons(socket, selfJid, {
-                title: '🤖 DAVE-X Session Ready',
-                text:
-                  '✅ *Your session ID has been generated!*\n\n' +
-                  'Copy the message above and set it as *SESSION_ID* in your bot config.\n\n' +
-                  '_Tap a button below for quick actions:_',
-                footer: 'DAVE-X Bot • Powered by Dave Tech',
-                buttons: [
-                  {
-                    name: 'cta_copy',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📋 Copy Session ID',
-                      copy_code: sessionId,
-                    }),
-                  },
-                  {
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '🌐 Visit Repo',
-                      url: REPO_URL,
-                      merchant_url: REPO_URL,
-                    }),
-                  },
-                  {
-                    name: 'cta_call',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📞 Contact Developer',
-                      phone_number: DEV_PHONE,
-                    }),
-                  },
-                  {
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📖 Documentation',
-                      url: REPO_URL + '#readme',
-                      merchant_url: REPO_URL + '#readme',
-                    }),
-                  },
-                ],
-              });
-              console.log('[Pair] Interactive buttons sent ✓');
-            } catch (btnErr) {
-              console.error('[Pair] sendButtons error:', btnErr.message);
-            }
+            console.log(`[Pair] Sending session to JID: ${selfJid}`);
+            await socket.sendMessage(selfJid, { text: sessionId });
+            console.log('[Pair] Session ID sent ✓');
 
             await delay(1000);
             await socket.ws.close();

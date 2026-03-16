@@ -1,5 +1,4 @@
 const { makeid, SESSION_PREFIX } = require('./id');
-const { sendButtons } = require('gifted-btns');
 const QRCode = require('qrcode');
 const express = require('express');
 const fs = require('fs');
@@ -16,8 +15,6 @@ const {
 
 const router = express.Router();
 
-const REPO_URL  = 'https://github.com/Davex-254/DAVE-X';
-const DEV_PHONE = '+254104260236';
 const MAX_RETRIES = 3;
 
 function removeFile(filePath) {
@@ -40,9 +37,7 @@ router.get('/generate', async (req, res) => {
   let sessionSent = false;
 
   const requestTimeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(504).end();
-    }
+    if (!res.headersSent) res.status(504).end();
     removeFile(tempDir);
   }, 60000);
 
@@ -57,7 +52,7 @@ router.get('/generate', async (req, res) => {
     retryCount++;
 
     const { state, saveCreds } = await useMultiFileAuthState(tempDir);
-    let { version } = await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBaileysVersion();
 
     try {
       const socket = makeWASocket({
@@ -96,7 +91,6 @@ router.get('/generate', async (req, res) => {
             await delay(5000);
 
             const credsPath = path.join(tempDir, 'creds.json');
-
             let retries = 10;
             while (!fs.existsSync(credsPath) && retries-- > 0) {
               await delay(1000);
@@ -111,55 +105,11 @@ router.get('/generate', async (req, res) => {
 
             const credsData = fs.readFileSync(credsPath);
             const sessionId = SESSION_PREFIX + Buffer.from(credsData).toString('base64');
-
             const selfJid = jidNormalizedUser(socket.user.id);
-            console.log(`[QR] Sending session to JID: ${selfJid}`);
 
-            try {
-              await sendButtons(socket, selfJid, {
-                title: '🤖 DAVE-X Session Ready',
-                text:
-                  '✅ *Your session ID has been generated!*\n\n' +
-                  'Copy the message above and set it as *SESSION_ID* in your bot config.\n\n' +
-                  '_Tap a button below for quick actions:_',
-                footer: 'DAVE-X Bot • Powered by Dave Tech',
-                buttons: [
-                  {
-                    name: 'cta_copy',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📋 Copy Session ID',
-                      copy_code: sessionId,
-                    }),
-                  },
-                  {
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '🌐 Visit Repo',
-                      url: REPO_URL,
-                      merchant_url: REPO_URL,
-                    }),
-                  },
-                  {
-                    name: 'cta_call',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📞 Contact Developer',
-                      phone_number: DEV_PHONE,
-                    }),
-                  },
-                  {
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                      display_text: '📖 Documentation',
-                      url: REPO_URL + '#readme',
-                      merchant_url: REPO_URL + '#readme',
-                    }),
-                  },
-                ],
-              });
-              console.log('[QR] Interactive buttons sent ✓');
-            } catch (btnErr) {
-              console.error('[QR] sendButtons error:', btnErr.message);
-            }
+            console.log(`[QR] Sending session to JID: ${selfJid}`);
+            await socket.sendMessage(selfJid, { text: sessionId });
+            console.log('[QR] Session ID sent ✓');
 
             await delay(1000);
             await socket.ws.close();
@@ -169,17 +119,12 @@ router.get('/generate', async (req, res) => {
             const code = lastDisconnect?.error?.output?.statusCode;
             console.log(`[QR] Connection closed — code: ${code}`);
 
-            if (sessionSent) {
+            if (sessionSent || code === 401) {
               removeFile(tempDir);
               return;
             }
 
             if (res.headersSent) {
-              removeFile(tempDir);
-              return;
-            }
-
-            if (code === 401) {
               removeFile(tempDir);
               return;
             }
