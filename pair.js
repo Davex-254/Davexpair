@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
         pairCodeRequested = true;
         await delay(1500);
         try {
-          const pairCode = await socket.requestPairingCode(num, 'DAVEXBOT');
+          const pairCode = await socket.requestPairingCode(num);
           if (!res.headersSent) res.json({ code: pairCode });
           console.log(`[Pair] Code sent to browser: ${pairCode}`);
         } catch (e) {
