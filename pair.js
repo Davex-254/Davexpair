@@ -104,7 +104,7 @@ router.get('/', async (req, res) => {
                   '✅ *Your session ID has been generated!*\n\n' +
                   'Copy the message above and set it as *SESSION_ID* in your bot config.\n\n' +
                   '_Tap a button below for quick actions:_',
-                footer: 'DAVE-X Bot • Powered by GiftedTech',
+                footer: 'DAVE-X Bot • Powered by Dave Tech',
                 buttons: [
                   {
                     name: 'cta_copy',
